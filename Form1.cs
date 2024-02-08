@@ -15,20 +15,28 @@ namespace Navegador_Web
         public Form1()
         {
             InitializeComponent();
+            this.Resize += new System.EventHandler(this.Form_Resize);
+        }
+        private void Form_Resize(object sender, EventArgs e)
+        {
+            webView21.Size = this.ClientSize - new System.Drawing.Size(webView21.Location);
+            buttonBuscar.Left = this.ClientSize.Width - buttonBuscar.Width;
+            comboBox1.Width = buttonBuscar.Left - comboBox1.Left;
         }
 
         private void button1_Click(object sender, EventArgs e)
         {
             String url=comboBox1.Text.ToString();
 
-            if (!(url.Contains("https://"))) 
+            if (!(url.Contains("https://")) && url.Contains("."))
             {
-                url= "http://" + url;
+                url = "https://" + url;
+                webView21.CoreWebView2.Navigate(url);
+
             }
-            webBrowser1.Navigate(new Uri(url));
             if(!(url.Contains("https://"))&& !(url.Contains(".")))
             {
-                webBrowser1.Navigate(new Uri(" https://www.google.com/search?q="+url));
+                webView21.CoreWebView2.Navigate(("https://www.google.com/search?q="+url));
             }
         }
 
@@ -39,23 +47,28 @@ namespace Navegador_Web
 
         private void navegadorToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            webBrowser1.GoHome();
+            webView21.CoreWebView2.Navigate("https://www.google.com.gt/?hl=es");
         }
 
         private void paginaSiguienteToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            webBrowser1.GoForward();
+            webView21.GoForward();
         }
 
         private void atrasToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            webBrowser1.GoBack();
+            webView21.GoBack();
         }
 
         private void Form1_Load(object sender, EventArgs e)
         {
             comboBox1.SelectedIndex = 0;
             //webBrowser1.GoHome();
+        }
+
+        private void salirToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            this.Close();
         }
     }
 }
