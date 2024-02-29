@@ -14,6 +14,7 @@ namespace Navegador_Web
 {
     public partial class Form1 : Form
     {
+        List<URL> urls = new List<URL>();
         public Form1()
         {
             InitializeComponent();
@@ -28,9 +29,14 @@ namespace Navegador_Web
 
         private void Guardar(string NombreArchivo, string texto)
         {
-            FileStream flujo = new FileStream(NombreArchivo, FileMode.Append, FileAccess.Write);
+            FileStream flujo = new FileStream(NombreArchivo, FileMode.OpenOrCreate, FileAccess.Write);
             StreamWriter escritor = new StreamWriter(flujo);
-            escritor.WriteLine(texto);
+            foreach (URL url in urls)
+            {
+                escritor.WriteLine(url.Url);
+                escritor.WriteLine(url.Veces);
+                escritor.WriteLine(url.Fecha);
+            }
             escritor.Close();
         }
 
@@ -43,33 +49,68 @@ namespace Navegador_Web
 
             while (reader.Peek() > -1)
             {
-                string Texto = reader.ReadLine();
-                comboBox1.Items.Add(Texto);
+                URL url = new URL();
+                url.Url = reader.ReadLine();
+                url.Veces= Convert.ToInt32(reader.ReadLine());
+                url.Fecha= Convert.ToDateTime(reader.ReadLine());
+                urls.Add(url);
             }
             reader.Close();
+            comboBox1.DisplayMember = "url";
+            comboBox1.DataSource = urls;
+            comboBox1.Refresh();
         }
 
         private void button1_Click(object sender, EventArgs e)
         {
-            String urlIngresado = comboBox1.Text;
-
-            if (!(urlIngresado.StartsWith("https://")))
             {
-                if (!(urlIngresado.Contains(".")))
+                string url = comboBox1.Text.ToString();
+
+                if (url.Contains(".") || url.Contains("/") || url.Contains(":"))
                 {
-                    urlIngresado = "https://www.google.com/search?q=" + Uri.EscapeDataString(urlIngresado);
+                    if (url.Contains("https"))
+                        webView21.CoreWebView2.Navigate(url);
+                    else
+                    {
+                        url = "https://" + url;
+                        webView21.CoreWebView2.Navigate(url);
+                    }
                 }
                 else
                 {
-                    urlIngresado = "https://" + urlIngresado + "/";
+                    if (!string.IsNullOrEmpty(url))
+                    {
+                        url = "https://www.google.com/search?q=" + url;
+                        webView21.CoreWebView2.Navigate(url);
+                    }
                 }
-                comboBox1.Text = urlIngresado;
-            }
-            webView21.CoreWebView2.Navigate(urlIngresado);
-            Guardar(@"C:\Users\HP\source\repos\Navegador Web\Historial.txt", comboBox1.Text);
-            comboBox1.Items.Clear();
-            leer();
 
+                URL urlExiste = urls.Find(u => u.Url == url);
+                if (urlExiste == null)
+                {
+                    URL urlNueva = new URL();
+                    urlNueva.Url = url;
+                    urlNueva.Veces = 1;
+                    urlNueva.Fecha = DateTime.Now;
+                    urls.Add(urlNueva);
+
+                    // Guardar el historial en el archivo
+                    Guardar(@"C:\Users\HP\source\repos\Navegador Web\Historial.txt", comboBox1.Text);
+
+                    webView21.CoreWebView2.Navigate(url);
+                }
+                else
+                {
+                    urlExiste.Veces++;
+                    urlExiste.Fecha = DateTime.Now;
+
+                    // Guardar el historial en el archivo
+                    Guardar(@"C:\Users\HP\source\repos\Navegador Web\Historial.txt",comboBox1.Text);
+
+                    webView21.CoreWebView2.Navigate(urlExiste.Url);
+                }
+
+            }
         }
 
         private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
